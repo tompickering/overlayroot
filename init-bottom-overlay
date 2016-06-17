@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Space-separated list of directories in '/' to overlay
+overlay_dirs="home var"
+
 PREREQ=""
 prereqs()
 {
@@ -48,13 +51,14 @@ if [ -f /overlay/reformatoverlay ]; then
 	mount ${OLDEV} /overlay
 fi
 
-mkdir -p /overlay/upper
-mkdir -p /overlay/work
-mkdir -p /overlay/lower
+for dir in $(echo $overlay_dirs | tr ' ' '\n') ; do
+    mkdir -p /overlay/upper_"$dir"
+    mkdir -p /overlay/work_"$dir"
 
-# make the readonly root available
-mount -n -o move ${rootmnt} /overlay/lower
-mount -t overlay overlay -olowerdir=/overlay/lower,upperdir=/overlay/upper,workdir=/overlay/work ${rootmnt}
+    # make the readonly root available
+    cp -a ${rootmnt}/"$dir"/ /overlay/lower_"$dir"
+    mount -t overlay overlay -olowerdir=/overlay/lower_"$dir",upperdir=/overlay/upper_"$dir",workdir=/overlay/work_"$dir" ${rootmnt}/"$dir"
+done
 
 mkdir -p ${rootmnt}/overlay
 mount -n -o rbind /overlay ${rootmnt}/overlay
